@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TomatoScan — Pomidor Kasallik Tashxisi</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🍅</div>
+    <div>
+      <div class="logo-text">TomatoScan</div>
+      <div class="logo-sub">Pomidor Kasallik Tashxisi</div>
+    </div>
+  </div>
+  <div class="header-badge">🤖 AI Tashxis</div>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>Pomidor Bargini Tekshiring</h1>
+    <p>Rasm yuklang yoki kamera bilan oling — AI kasallikni aniqlaydi va dori-darmon tavsiya qiladi</p>
+  </div>
+
+  <!-- YUKLASH KARTASI -->
+  <div class="upload-card">
+    <div class="upload-tabs">
+      <button class="tab-btn active" onclick="switchTab('upload')" id="tabUpload">
+        <span>📁</span> Rasm Yuklash
+      </button>
+      <button class="tab-btn" onclick="switchTab('camera')" id="tabCamera">
+        <span>📷</span> Kamera
+      </button>
+    </div>
+
+    <div class="upload-body">
+      <!-- FAYL YUKLASH -->
+      <div id="uploadPanel">
+        <div class="drop-zone" id="dropZone"
+          ondragover="handleDragOver(event)"
+          ondrop="handleDrop(event)"
+          ondragleave="handleDragLeave(event)">
+          <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
+          <div class="drop-icon">🌿</div>
+          <h3>Rasm bu yerga tashlang yoki tanlang</h3>
+          <p>Barcha rasm formatlari qabul qilinadi</p>
+          <div class="fmt-list">
+            <span>PNG</span><span>JPG</span><span>WEBP</span>
+            <span>GIF</span><span>BMP</span><span>TIFF</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- KAMERA -->
+      <div id="cameraPanel" class="hidden">
+        <div class="cam-box">
+          <video id="videoEl" autoplay playsinline></video>
+          <div class="cam-overlay" id="camOverlay">
+            <p>📷 Kamerani yoqish uchun bosing</p>
+            <button class="btn-red" onclick="startCamera()">📷 Kamerani Yoqish</button>
+          </div>
+        </div>
+        <div class="cam-actions">
+          <button class="btn-red" onclick="capturePhoto()" id="captureBtn" style="display:none">
+            📸 Suratga Olish
+          </button>
+          <button class="btn-outline" onclick="stopCamera()" id="stopBtn" style="display:none">
+            ⏹ To'xtatish
+          </button>
+        </div>
+      </div>
+
+      <canvas id="canvas" style="display:none"></canvas>
+
+      <!-- PREVIEW -->
+      <div id="previewSection" class="hidden">
+        <div class="preview-box">
+          <img id="previewImg" src="" alt="Yuklangan rasm">
+        </div>
+        <div class="preview-meta" id="previewMeta"></div>
+        <div class="preview-actions">
+          <button class="btn-outline" onclick="resetAll()">🔄 Boshqa Rasm</button>
+        </div>
+      </div>
+
+      <!-- TAHLIL TUGMASI -->
+      <button id="analyzeBtn" onclick="analyze()" class="hidden">
+        🔬 Kasallikni Aniqlash
+      </button>
+    </div>
+  </div>
+
+  <!-- YUKLANMOQDA -->
+  <div id="loadingSection" class="hidden loading-card">
+    <div class="spinner"></div>
+    <p class="load-title">AI tahlil qilmoqda...</p>
+    <p class="load-sub">Iltimos kuting, bir necha soniya</p>
+    <div class="load-steps">
+      <div class="lstep" id="ls1"><span class="ldot"></span>Rasm tayyorlanmoqda</div>
+      <div class="lstep" id="ls2"><span class="ldot"></span>AI tahlili</div>
+      <div class="lstep" id="ls3"><span class="ldot"></span>Tashxis yaratilmoqda</div>
+    </div>
+  </div>
+
+  <!-- XATO -->
+  <div id="errorSection" class="hidden">
+    <div class="error-card">
+      <div class="err-icon">⚠️</div>
+      <h3>Xato yuz berdi</h3>
+      <p id="errorMsg">Qaytadan urinib ko'ring</p>
+      <button class="btn-outline" onclick="resetAll()" style="margin-top:14px">
+        🔄 Qayta urinish
+      </button>
+    </div>
+  </div>
+
+  <!-- NATIJA -->
+  <div id="resultSection" class="hidden"></div>
+
+  <!-- QANDAY ISHLAYDI -->
+  <div class="info-card how-card">
+    <h2>📋 Qanday ishlaydi?</h2>
+    <div class="how-grid">
+      <div class="how-step">
+        <div class="how-num">1</div>
+        <div class="how-emoji">📸</div>
+        <div class="how-title">Rasm oling</div>
+        <div class="how-desc">Pomidor bargining aniq rasmini yuklang yoki kamera bilan oling</div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">2</div>
+        <div class="how-emoji">🤖</div>
+        <div class="how-title">AI tahlili</div>
+        <div class="how-desc">Sun'iy intellekt rasm belgilerini chuqur tahlil qiladi</div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">3</div>
+        <div class="how-emoji">🔬</div>
+        <div class="how-title">Tashxis</div>
+        <div class="how-desc">Kasallik nomi va og'irlik darajasi aniqlanadi</div>
+      </div>
+      <div class="how-step">
+        <div class="how-num">4</div>
+        <div class="how-emoji">💊</div>
+        <div class="how-title">Maslahat</div>
+        <div class="how-desc">Dori-darmon va davolash tavsiyalari beriladi</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KASALLIKLAR -->
+  <div class="info-card">
+    <h2>🦠 Aniqlanishi mumkin bo'lgan kasalliklar</h2>
+    <div class="disease-grid">
+      <div class="dpill"><span class="ddot" style="background:#e74c3c"></span>Early Blight — Erta yanilish</div>
+      <div class="dpill"><span class="ddot" style="background:#8e44ad"></span>Late Blight — Kech yanilish</div>
+      <div class="dpill"><span class="ddot" style="background:#f39c12"></span>Yellow Leaf Curl Virus</div>
+      <div class="dpill"><span class="ddot" style="background:#1abc9c"></span>Leaf Mold — Barg mog'ori</div>
+      <div class="dpill"><span class="ddot" style="background:#3498db"></span>Septoria Leaf Spot</div>
+      <div class="dpill"><span class="ddot" style="background:#e67e22"></span>Bacterial Spot</div>
+      <div class="dpill"><span class="ddot" style="background:#c0392b"></span>Spider Mite — Kanalar</div>
+      <div class="dpill"><span class="ddot" style="background:#2c3e50"></span>Target Spot</div>
+      <div class="dpill"><span class="ddot" style="background:#27ae60"></span>✅ Sog'lom barg</div>
+    </div>
+  </div>
+
+  <!-- MUALLIF -->
+  <div class="author-card">
+    <div class="author-photo-col">
+      <img class="author-img" src="{{ url_for('static', filename='author.jpg') }}" alt="Amirov Islombek">
+      <div class="author-img-name">Amirov Islombek</div>
+    </div>
+    <div class="author-info-col">
+      <div class="author-role">👤 Muallif haqida</div>
+      <h2 class="author-name">Amirov Islombek</h2>
+      <div class="author-details">
+        <div class="adet">
+          <span class="adet-icon">🏛️</span>
+          <div>
+            <div class="adet-label">Ta'lim muassasasi</div>
+            <div class="adet-val">Andijon davlat universiteti</div>
+          </div>
+        </div>
+        <div class="adet">
+          <span class="adet-icon">💻</span>
+          <div>
+            <div class="adet-label">Yo'nalish</div>
+            <div class="adet-val">Kompyuter tizimlari va ularning dasturiy ta'minoti</div>
+          </div>
+        </div>
+        <div class="adet">
+          <span class="adet-icon">📚</span>
+          <div>
+            <div class="adet-label">Daraja</div>
+            <div class="adet-val">2-bosqich magistranti</div>
+          </div>
+        </div>
+      </div>
+      <div class="diss-box">
+        <div class="diss-label">📄 Dissertatsiya mavzusi</div>
+        <div class="diss-text">
+          Tasvirdagi obyektlarni va ma'lumotlarni aniqlash usullarini tahlil qilish va algoritm ishlab chiqish
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <p>🍅 <strong>TomatoScan</strong> — Amirov Islombek | Andijon davlat universiteti | Magistrlik Dissertatsiyasi</p>
+  <p style="margin-top:6px; opacity:0.7">⚠️ Tashxis faqat dastlabki ko'rsatma — aniq davolash uchun mutaxassis agronoma murojaat qiling</p>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
