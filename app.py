@@ -24,8 +24,9 @@ app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  # 20MB
 ALLOWED = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'tiff', 'tif'}
 
 # Gemini AI sozlash
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-model = model = genai.configure(api_key="AIzaSyDZBR6_oY6t100zXZsNX-Sn2WQ0WAmuZWg")
+GEMINI_KEY = os.environ.get("GOOGLE_API_KEY") or "AIzaSyDZBR6_oY6t100zXZsNX-Sn2WQ0WAmuZWg"
+genai.configure(api_key=GEMINI_KEY)
+model = genai.GenerativeModel("gemini-2.0-flash")
 
 
 def detect_media_type(data: bytes, filename: str = "") -> str:
