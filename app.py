@@ -25,7 +25,7 @@ ALLOWED = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'tiff', 'tif'}
 
 # Gemini AI sozlash
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-1.5-flash")
+model = model = genai.GenerativeModel("gemini-2.0-flash")
 
 
 def detect_media_type(data: bytes, filename: str = "") -> str:
