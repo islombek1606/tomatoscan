@@ -1,6 +1,7 @@
 """
 TomatoScan — Pomidor kasalliklarini aniqlash tizimi
 Muallif: Amirov Islombek | Andijon davlat universiteti
+AI: Google Gemini Vision (Bepul)
 """
 
 import os
@@ -10,9 +11,9 @@ import re
 import io
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
-import anthropic
 from PIL import Image
 from dotenv import load_dotenv
+import google.generativeai as genai
 
 load_dotenv()
 
@@ -22,7 +23,9 @@ app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  # 20MB
 
 ALLOWED = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'tiff', 'tif'}
 
-client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+# Gemini AI sozlash
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 
 def detect_media_type(data: bytes, filename: str = "") -> str:
@@ -54,11 +57,12 @@ def to_supported(data: bytes, media_type: str):
 
 
 def run_ai(img_bytes: bytes, media_type: str) -> dict:
-    """AI yordamida kasallikni aniqlaymiz"""
+    """Gemini AI yordamida kasallikni aniqlaymiz"""
     img_bytes, media_type = to_supported(img_bytes, media_type)
-    b64 = base64.standard_b64encode(img_bytes).decode()
 
-    system = """Sen pomidor o'simliklarining kasalliklarini aniqlashga ixtisoslashgan 
+    img = Image.open(io.BytesIO(img_bytes))
+
+    prompt = """Sen pomidor o'simliklarining kasalliklarini aniqlashga ixtisoslashgan 
 agronomy mutaxassisisin. Rasmni diqqat bilan tahlil qilib FAQAT JSON formatda javob ber.
 
 JSON formati:
@@ -93,27 +97,11 @@ QOIDALAR:
 - Agar rasm pomidor bargi EMAS bo'lsa: status="unknown"
 - Agar barg SOGLOM bo'lsa: status="healthy"
 - Kasallik bo'lsa: status="disease"
-- FAQAT JSON qaytargin, boshqa hech narsa yozma"""
+- FAQAT JSON qaytargin, hech qanday boshqa matn yozma
+- JSON dan oldin va keyin hech narsa yozma"""
 
-    msg = client.messages.create(
-        model="claude-opus-4-5",
-        max_tokens=2000,
-        system=system,
-        messages=[{
-            "role": "user",
-            "content": [
-                {"type": "image", "source": {
-                    "type": "base64",
-                    "media_type": media_type,
-                    "data": b64
-                }},
-                {"type": "text",
-                 "text": "Ushbu pomidor bargini chuqur tahlil qilib, JSON formatda javob bering."}
-            ]
-        }]
-    )
-
-    raw = msg.content[0].text
+    response = model.generate_content([prompt, img])
+    raw = response.text
     m = re.search(r'\{[\s\S]*\}', raw)
     if not m:
         raise ValueError("AI dan noto'g'ri javob keldi")
@@ -144,8 +132,6 @@ def analyze():
 
     except json.JSONDecodeError:
         return jsonify({'error': 'AI javobini tahlil qilishda xato'}), 500
-    except anthropic.APIError as e:
-        return jsonify({'error': f'AI xizmati xatosi: {str(e)}'}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
