@@ -23,7 +23,7 @@ app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
 
 ALLOWED = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'tiff', 'tif'}
 
-OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+OPENROUTER_KEY = os.environ.get("OPENROUTER_API_KEY", "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")
 
 
 def detect_media_type(data: bytes, filename: str = "") -> str:
@@ -100,7 +100,7 @@ QOIDALAR:
             "X-Title": "TomatoScan"
         },
         json={
-            "model": "meta-llama/llama-4-scout:free",
+            "model": "meta-llama/llama-3.2-11b-vision-instruct:free",
             "messages": [
                 {
                     "role": "user",
